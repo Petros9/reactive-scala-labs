@@ -28,9 +28,11 @@ class CartActor extends Actor {
   import CartActor._
 
   private val log       = Logging(context.system, this)
-  val cartTimerDuration = 5 seconds
+  val cartTimerDuration = 10 seconds
 
   private def scheduleTimer: Cancellable = context.system.scheduler.scheduleOnce(cartTimerDuration, self, ExpireCart)
+
+  def printCart(cart: Cart): Unit = cart.list
 
   def receive: Receive = empty
 
@@ -44,10 +46,12 @@ class CartActor extends Actor {
     case AddItem(item) =>
       log.info(s"Adding $item")
       timer.cancel()
+      cart.list
       context.become(nonEmpty(cart.addItem(item), scheduleTimer))
 
     case RemoveItem(item) if cart.contains(item) && cart.size == 1 =>
       timer.cancel()
+      cart.list
       log.info(s"Deleting $item")
       if(cart.size > 1) context.become(nonEmpty(cart.removeItem(item), scheduleTimer))
       if(cart.size == 1 && cart.contains(item)) context.become(empty)
@@ -55,6 +59,7 @@ class CartActor extends Actor {
 
     case StartCheckout =>
       timer.cancel()
+      cart.list
       log.info(s"Starting checking out")
       context.become(inCheckout(cart))
 
