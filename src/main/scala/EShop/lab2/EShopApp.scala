@@ -7,7 +7,7 @@ import scala.io.StdIn.readLine
 
 object EShopApp  extends App{
   val system = ActorSystem("EShop")
-  val cartActor = system.actorOf(Props[CartActor], "mainActor")
+  val cartActor = system.actorOf(Props[CartActor], "carActor")
 
   while (true) {
     println("Available operations:\n" +
@@ -34,14 +34,14 @@ object EShopApp  extends App{
         cartActor ! RemoveItem(item)
       }
     }
-    else if (input == "Checkout") {
+    else if (input.equals("Checkout")) {
       cartActor ! CartActorStartCheckout
       val checkoutActor = system.actorOf(Props[Checkout], "checkoutActor")
       checkoutActor ! CheckoutStartCheckout
       println("Enter delivery method/cancel):")
       val deliveryMethod = readLine()
 
-      if (deliveryMethod.toLowerCase() == "cancel") {
+      if (deliveryMethod.equals("cancel")) {
         checkoutActor ! CancelCheckout
         cartActor ! ConfirmCheckoutCancelled
       }
@@ -50,7 +50,7 @@ object EShopApp  extends App{
         println("Enter payment method/cancel:")
         val paymentMethod = readLine()
 
-        if (paymentMethod.toLowerCase() == "cancel") {
+        if (paymentMethod.equals("cancel")) {
           checkoutActor ! CancelCheckout
           cartActor ! ConfirmCheckoutCancelled
         }
@@ -59,7 +59,7 @@ object EShopApp  extends App{
           println("(enter \"pay\")/cancel:")
           val payment = readLine()
 
-          if (payment.toLowerCase() == "cancel") {
+          if (payment.equals("cancel")) {
             checkoutActor ! CancelCheckout
             cartActor ! ConfirmCheckoutCancelled
           }
