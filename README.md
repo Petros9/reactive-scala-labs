@@ -1,1 +1,1 @@
-# reactive-lab
+# reactive-lab Piotr Świderski
