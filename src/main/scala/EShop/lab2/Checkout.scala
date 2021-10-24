@@ -1,8 +1,8 @@
 package EShop.lab2
 
-import EShop.lab2.Checkout._
-import akka.actor.{Actor, ActorRef, Cancellable, Props}
-import akka.event.{Logging, LoggingReceive}
+import EShop.lab2.Checkout.{CancelCheckout, ConfirmPaymentReceived, ExpireCheckout, ExpirePayment, SelectDeliveryMethod, SelectPayment, StartCheckout}
+import akka.actor.{Actor, ActorRef, Cancellable}
+import akka.event.Logging
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

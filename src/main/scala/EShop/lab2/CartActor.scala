@@ -1,7 +1,7 @@
 package EShop.lab2
 
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
-import akka.event.{Logging, LoggingReceive}
+import akka.event.Logging
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -67,6 +67,7 @@ class CartActor extends Actor {
       timer.cancel()
       log.info(s"Cart expired")
       context.become(empty)
+
   }
 
   def inCheckout(cart: Cart): Receive =  {
