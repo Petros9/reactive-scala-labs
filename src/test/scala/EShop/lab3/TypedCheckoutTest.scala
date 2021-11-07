@@ -1,5 +1,5 @@
 package EShop.lab3
-import EShop.lab2.{Cart, TypedCartActor}
+import EShop.lab2.{Cart, TypedCartActor, TypedCheckout}
 import EShop.lab2.TypedCartActor.ConfirmCheckoutClosed
 import EShop.lab3.OrderManager.ConfirmCheckoutStarted
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
@@ -23,31 +23,21 @@ class TypedCheckoutTest
     testKit.shutdownTestKit()
 
   it should "Send close confirmation to cart" in {
-    val probeCartActor = testKit.createTestProbe[Any]()
-    val testTypedCartActor = cartActorWithCartSizeResponseOnStateChange(testKit, probeCartActor.ref)
-    val probeOrderManager = testKit.createTestProbe[OrderManager.Command]()
-    testTypedCartActor ! TypedCartActor.AddItem("First")
-    testTypedCartActor ! TypedCartActor.StartCheckout(probeOrderManager.ref)
-    val message = probeOrderManager.receiveMessage()
-    val checkoutRef = message match { case ConfirmCheckoutStarted(checkoutRef) => checkoutRef }
-    checkoutRef ! SelectDeliveryMethod("credit-card")
-    checkoutRef ! SelectPayment("paypal", probeOrderManager.ref)
-    checkoutRef ! ConfirmPaymentReceived
-    probeCartActor.expectMessage(ConfirmCheckoutClosed)
+    val managerCheckoutMapperProbe = testKit.createTestProbe[TypedCheckout.Event]()
+    val managerPaymentMapperProbe  = testKit.createTestProbe[Payment.Event]()
+
+    val checkout = testKit.spawn(TypedCheckout(managerCheckoutMapperProbe.ref), "checkout")
+
+    checkout ! TypedCheckout.StartCheckout
+    checkout ! TypedCheckout.SelectDeliveryMethod("post")
+    checkout ! TypedCheckout.SelectPayment("paypal", managerCheckoutMapperProbe.ref, managerPaymentMapperProbe.ref)
+
+    val paymentStarted = managerCheckoutMapperProbe.expectMessageType[TypedCheckout.PaymentStarted]
+
+    paymentStarted.paymentRef ! Payment.DoPayment
+    managerPaymentMapperProbe.expectMessage(Payment.PaymentReceived)
+
+    managerCheckoutMapperProbe.expectMessage(TypedCheckout.CheckoutClosed)
   }
 
-  def cartActorWithCartSizeResponseOnStateChange(testKit: ActorTestKit,
-                                                 probe: ActorRef[Any]
-                                                ): ActorRef[TypedCartActor.Command] =
-    testKit.spawn {
-      val cartActor = new TypedCartActor {
-        override def inCheckout(cart: Cart): Behavior[TypedCartActor.Command] = Behaviors.receive(
-          (_, message) => {
-            probe ! message
-            super.inCheckout(cart)
-          }
-        )
-      }
-      cartActor.start
-    }
 }

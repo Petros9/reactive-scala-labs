@@ -24,26 +24,26 @@ class TypedCartTest
   it should "add item properly" in {
     val testTypedCartActor = BehaviorTestKit(new TypedCartActor().start)
     val typedCartInbox = TestInbox[Cart]()
-    testTypedCartActor.run(TypedCartActor.AddItem("First"))
+    testTypedCartActor.run(TypedCartActor.AddItem("First Item"))
     testTypedCartActor.run(TypedCartActor.GetItems(typedCartInbox.ref))
-    val cartWithFirstItem = Cart.empty.addItem("First")
+    val cartWithFirstItem = Cart.empty.addItem("First Item")
     typedCartInbox.expectMessage(cartWithFirstItem)
-    testTypedCartActor.run(TypedCartActor.AddItem("Second"))
+    testTypedCartActor.run(TypedCartActor.AddItem("Second Item"))
     testTypedCartActor.run(TypedCartActor.GetItems(typedCartInbox.ref))
-    val cartWithSecondItem = cartWithFirstItem.addItem("Second")
+    val cartWithSecondItem = cartWithFirstItem.addItem("Second Item")
     typedCartInbox.expectMessage(cartWithSecondItem)
   }
 
   it should "add item properly (asynchronous)" in {
-    val testTypedCartActor = testKit.spawn(new TypedCartActor().start, "cart")
+    val testTypedCartActor = testKit.spawn(new TypedCartActor().start, "cartActor")
     val probe = testKit.createTestProbe[Cart]()
-    testTypedCartActor ! AddItem("First")
+    testTypedCartActor ! AddItem("First Item")
     testTypedCartActor ! GetItems(probe.ref)
-    val cartWithFirstItem = Cart.empty.addItem("First")
+    val cartWithFirstItem = Cart.empty.addItem("First Item")
     probe.expectMessage(cartWithFirstItem)
-    testTypedCartActor ! AddItem("Second")
+    testTypedCartActor ! AddItem("Second Item")
     testTypedCartActor ! GetItems(probe.ref)
-    val cartWithSecondItem = cartWithFirstItem.addItem("Second")
+    val cartWithSecondItem = cartWithFirstItem.addItem("Second Item")
     probe.expectMessage(cartWithSecondItem)
     testKit.stop(testTypedCartActor)
   }
@@ -51,56 +51,41 @@ class TypedCartTest
   it should "be empty after adding and removing the same item" in {
     val testTypedCartActor = BehaviorTestKit(new TypedCartActor().start)
     val typedCartInbox = TestInbox[Cart]()
-    testTypedCartActor.run(TypedCartActor.AddItem("First"))
+    testTypedCartActor.run(TypedCartActor.AddItem("First Item"))
     testTypedCartActor.run(TypedCartActor.GetItems(typedCartInbox.ref))
-    val cartWithFirstItem = Cart.empty.addItem("First")
+    val cartWithFirstItem = Cart.empty.addItem("First Item")
     typedCartInbox.expectMessage(cartWithFirstItem)
-    testTypedCartActor.run(TypedCartActor.RemoveItem("First"))
+    testTypedCartActor.run(TypedCartActor.RemoveItem("First Item"))
     testTypedCartActor.run(TypedCartActor.GetItems(typedCartInbox.ref))
     typedCartInbox.expectMessage(Cart.empty)
   }
 
   it should "be empty after adding and removing the same item (asynchronous)" in {
-    val testTypedCartActor = testKit.spawn(new TypedCartActor().start, "cart")
+    val testTypedCartActor = testKit.spawn(new TypedCartActor().start, "cartActor")
     val probe = testKit.createTestProbe[Cart]()
-    testTypedCartActor ! AddItem("First")
+    testTypedCartActor ! AddItem("First Item")
     testTypedCartActor ! GetItems(probe.ref)
-    val cartWithFirstItem = Cart.empty.addItem("First")
+    val cartWithFirstItem = Cart.empty.addItem("First Item")
     probe.expectMessage(cartWithFirstItem)
-    testTypedCartActor ! RemoveItem("First")
+    testTypedCartActor ! RemoveItem("First Item")
     testTypedCartActor ! GetItems(probe.ref)
     probe.expectMessage(Cart.empty)
     testKit.stop(testTypedCartActor)
   }
 
-  it should "start checkout" in {
-    val testTypedCartActor = BehaviorTestKit(new TypedCartActor().start)
-    val typedCartInbox = TestInbox[Cart]()
-    val testOrderManagerInbox = TestInbox[OrderManager.Command]()
-    // Add item:
-    testTypedCartActor.run(TypedCartActor.AddItem("First"))
-    testTypedCartActor.run(TypedCartActor.GetItems(typedCartInbox.ref))
-    val cartWithFirstItem = Cart.empty.addItem("First")
-    typedCartInbox.expectMessage(cartWithFirstItem)
-    // Start checkout:
-    testTypedCartActor.run(TypedCartActor.StartCheckout(testOrderManagerInbox.ref))
-    // First efect = Scheduled timer
-    testTypedCartActor.expectEffectType[Scheduled[String]]
-    testTypedCartActor.expectEffectType[Spawned[String]]
-    testOrderManagerInbox.hasMessages
-  }
 
   it should "start checkout (asynchronous)" in {
-    val testTypedCartActor = testKit.spawn(new TypedCartActor().start, "cart")
+    val managerCartMapperInbox = TestInbox[TypedCartActor.Event]()
+    val testTypedCartActor = testKit.spawn(new TypedCartActor().start, "cartActor")
     val probeTypedCartActor = testKit.createTestProbe[Cart]()
     val probeOrderManager = testKit.createTestProbe[OrderManager.Command]()
     // Add item:
-    testTypedCartActor ! AddItem("First")
+    testTypedCartActor ! AddItem("First Item")
     testTypedCartActor ! GetItems(probeTypedCartActor.ref)
-    val cartWithFirstItem = Cart.empty.addItem("First")
+    val cartWithFirstItem = Cart.empty.addItem("First Item")
     probeTypedCartActor.expectMessage(cartWithFirstItem)
     // Start checkout:
-    testTypedCartActor ! TypedCartActor.StartCheckout(probeOrderManager.ref)
+    testTypedCartActor ! TypedCartActor.StartCheckout(managerCartMapperInbox.ref)
     testKit.stop(testTypedCartActor)
   }
 }

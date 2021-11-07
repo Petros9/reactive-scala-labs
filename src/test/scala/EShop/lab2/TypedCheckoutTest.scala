@@ -1,4 +1,4 @@
-package EShop.lab2
+/*package EShop.lab2
 
 import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
 import akka.actor.typed.{ActorRef, Behavior}
@@ -244,4 +244,4 @@ object TypedCheckoutTest {
       }
       checkout.start
     }
-}
+}*/

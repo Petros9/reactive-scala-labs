@@ -1,3 +1,4 @@
+/*
 package EShop.lab2
 
 import akka.actor.Cancellable
@@ -223,3 +224,4 @@ object TypedCartActorTest {
     }
 
 }
+*/
