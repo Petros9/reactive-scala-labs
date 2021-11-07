@@ -245,4 +245,57 @@ class PersistentCheckoutTest
     resultCancelCheckout.state shouldBe Closed
   }
 
+  it should "[with interruption] be in closed state after payment completed" in {
+    val resultStartCheckout = eventSourcedTestKit.runCommand(StartCheckout)
+    val orderManagerCheckout = testKit.createTestProbe[Event]
+    val orderManagerPayment = testKit.createTestProbe[Payment.Event]
+    resultStartCheckout.event shouldBe CheckoutStarted
+    resultStartCheckout.state.isInstanceOf[SelectingDelivery] shouldBe true
+
+    val resultSelectDelivery = eventSourcedTestKit.runCommand(SelectDeliveryMethod(deliveryMethod))
+
+    resultSelectDelivery.event.isInstanceOf[DeliveryMethodSelected] shouldBe true
+    resultSelectDelivery.state.isInstanceOf[SelectingPaymentMethod] shouldBe true
+
+
+    eventSourcedTestKit.restart()
+    val resultSelectPayment = eventSourcedTestKit.runCommand(SelectPayment(paymentMethod, orderManagerCheckout.ref, orderManagerPayment.ref))
+
+    resultSelectPayment.event.isInstanceOf[PaymentStarted] shouldBe true
+    resultSelectPayment.state.isInstanceOf[ProcessingPayment] shouldBe true
+
+    val resultReceivePayment = eventSourcedTestKit.runCommand(ConfirmPaymentReceived)
+
+    resultReceivePayment.event shouldBe CheckOutClosed
+    resultReceivePayment.state shouldBe Closed
+  }
+
+
+  it should "[with interruption] not change state after cancel msg in completed state" in {
+    val resultStartCheckout = eventSourcedTestKit.runCommand(StartCheckout)
+    val orderManagerCheckout = testKit.createTestProbe[Event]
+    val orderManagerPayment = testKit.createTestProbe[Payment.Event]
+    resultStartCheckout.event shouldBe CheckoutStarted
+    resultStartCheckout.state.isInstanceOf[SelectingDelivery] shouldBe true
+    eventSourcedTestKit.restart()
+    val resultSelectDelivery = eventSourcedTestKit.runCommand(SelectDeliveryMethod(deliveryMethod))
+
+    resultSelectDelivery.event.isInstanceOf[DeliveryMethodSelected] shouldBe true
+    resultSelectDelivery.state.isInstanceOf[SelectingPaymentMethod] shouldBe true
+    eventSourcedTestKit.restart()
+    val resultSelectPayment = eventSourcedTestKit.runCommand(SelectPayment(paymentMethod, orderManagerCheckout.ref, orderManagerPayment.ref))
+
+    resultSelectPayment.event.isInstanceOf[PaymentStarted] shouldBe true
+    resultSelectPayment.state.isInstanceOf[ProcessingPayment] shouldBe true
+    eventSourcedTestKit.restart()
+    val resultReceivePayment = eventSourcedTestKit.runCommand(ConfirmPaymentReceived)
+
+    resultReceivePayment.event shouldBe CheckOutClosed
+    resultReceivePayment.state shouldBe Closed
+    eventSourcedTestKit.restart()
+    val resultCancelCheckout = eventSourcedTestKit.runCommand(CancelCheckout)
+
+    resultCancelCheckout.hasNoEvents shouldBe true
+    resultCancelCheckout.state shouldBe Closed
+  }
 }
