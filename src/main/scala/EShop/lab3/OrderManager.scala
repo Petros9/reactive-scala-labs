@@ -21,6 +21,9 @@ object OrderManager {
   sealed trait Ack
   case object Done extends Ack //trivial ACK
 
+  sealed trait Event
+
+
   def apply(): Behavior[OrderManager.Command] = Behaviors.setup { context =>
     new OrderManager(context).start
   }

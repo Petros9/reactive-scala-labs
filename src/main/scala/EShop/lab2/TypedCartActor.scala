@@ -6,6 +6,7 @@ import akka.actor.Cancellable
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior}
 
+import java.time.Instant
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -22,6 +23,21 @@ object TypedCartActor {
 
   sealed trait Event
   case class CheckoutStarted(checkoutRef: ActorRef[TypedCheckout.Command]) extends Event
+  case class ItemAdded(item: Any, startTimeOpt: Option[Instant])           extends Event
+  case class ItemRemoved(item: Any)                                        extends Event
+  case object CartEmptied                                                  extends Event
+  case object CartExpired                                                  extends Event
+  case object CheckoutClosed                                               extends Event
+  case object CheckoutCancelled                                            extends Event
+
+  sealed abstract class State(val timerOpt: Option[Cancellable]) {
+    def cart: Cart
+  }
+  case object Empty extends State(None) {
+    def cart: Cart = Cart.empty
+  }
+  case class NonEmpty(cart: Cart, timer: Cancellable) extends State(Some(timer))
+  case class InCheckout(cart: Cart)                   extends State(None)
 }
 
 class TypedCartActor {
@@ -40,9 +56,7 @@ class TypedCartActor {
       => nonEmpty(Cart.empty.addItem(item), scheduleTimer(context))
       case GetItems(sender) => sender ! Cart.empty
         Behaviors.same
-      case message =>
-        context.log.info(s"Received unknown message: $message")
-        Behaviors.same
+      case _ => Behaviors.same
     }
   }
 
@@ -62,8 +76,7 @@ class TypedCartActor {
         empty
       case GetItems(sender) => sender ! cart
         Behaviors.same
-      case message => context.log.info(s"Received unknown message: $message")
-        Behaviors.same
+      case _ => Behaviors.same
     }
   }
 
@@ -73,8 +86,7 @@ class TypedCartActor {
       case ConfirmCheckoutClosed => empty
       case GetItems(sender) => sender ! cart
         Behaviors.same
-      case message => context.log.info(s"Received unknown message: $message")
-        Behaviors.same
+      case _ => Behaviors.same
     }
   }
 
