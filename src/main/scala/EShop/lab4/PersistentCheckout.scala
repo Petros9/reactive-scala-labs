@@ -10,7 +10,6 @@ import akka.actor.typed.{ActorRef, Behavior, PostStop}
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
 
-import java.time.Instant
 import scala.concurrent.duration._
 
 class PersistentCheckout {
@@ -73,7 +72,7 @@ class PersistentCheckout {
               .thenRun(_ => cartActor ! TypedCartActor.ConfirmCheckoutClosed)
           case ExpirePayment  => Effect.persist(CheckoutCancelled)
           case CancelCheckout => Effect.persist(CheckoutCancelled)
-          case message => Effect.none
+          case _ => Effect.none
         }
 
       case Cancelled =>
@@ -88,7 +87,6 @@ class PersistentCheckout {
     }
   }
   def eventHandler(context: ActorContext[Command]): (State, Event) => State = (state, event) => {
-    lazy val now             = Instant.now()
     lazy val stopTimer: Unit = state.timerOpt.foreach(_.cancel)
     lazy val timer           = state.timerOpt.get
 
