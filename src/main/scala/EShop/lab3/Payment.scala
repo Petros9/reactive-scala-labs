@@ -2,6 +2,7 @@ package EShop.lab3
 
 import EShop.lab2.TypedCheckout
 import EShop.lab2.TypedCheckout.ConfirmPaymentReceived
+import EShop.lab3.Payment.{DoPayment, Event, ReceivedPayment}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
 
@@ -10,38 +11,24 @@ object Payment {
   sealed trait Command
   case object DoPayment extends Command
 
-
   sealed trait Event
-  case object PaymentReceived extends Event
+  case object ReceivedPayment extends Event
 
 
-  //
-  def apply(
-             method: String,
-             orderManager: ActorRef[Event],
-             checkout: ActorRef[Event]
-           ): Behavior[Command] =
-    Behaviors.setup(_ => new Payment(method, orderManager, checkout).start)
-
-  //
 }
 
 class Payment(
                method: String,
-               orderManager: ActorRef[Payment.Event],
-               checkout: ActorRef[Payment.Event]
+               orderManager: ActorRef[Event],
+               checkout: ActorRef[TypedCheckout.Command]
              ) {
 
-  import Payment._
-
-  def start: Behavior[Payment.Command] =  Behaviors.receive[Command] {
-    (_, message) =>message match {
-        case DoPayment => {
-          checkout ! PaymentReceived
-          orderManager ! PaymentReceived
-          Behaviors.stopped
-        }
-      }
+  def start: Behavior[Payment.Command] = Behaviors.receive {
+    (_, message) => message match {
+      case DoPayment => orderManager ! ReceivedPayment
+        checkout ! TypedCheckout.ConfirmPaymentReceived
+        Behaviors.same
+      case _ => Behaviors.same
+    }
   }
-
 }

@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.duration._
 
-class OrderManagerIntegrationTest
+class OrderManagerTest
   extends ScalaTestWithActorTestKit
     with AnyFlatSpecLike
     with BeforeAndAfterAll
@@ -32,10 +32,14 @@ class OrderManagerIntegrationTest
   }
 
   it should "supervise whole order process" in {
-    val orderManager = testKit.spawn(new OrderManager().start).ref
+    val orderManager = testKit.spawn(OrderManager()).ref
+
     sendMessage(orderManager, AddItem("rollerblades", _))
+
     sendMessage(orderManager, Buy)
+
     sendMessage(orderManager, SelectDeliveryAndPaymentMethod("paypal", "inpost", _))
+
     sendMessage(orderManager, ref => Pay(ref))
   }
 

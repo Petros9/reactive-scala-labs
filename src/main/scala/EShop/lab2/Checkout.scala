@@ -44,8 +44,8 @@ class Checkout extends Actor {
   private def paymentTimer: Cancellable =
     scheduler.scheduleOnce(paymentTimerDuration, self, ExpirePayment)
 
-  val checkoutTimerDuration = 5 seconds
-  val paymentTimerDuration  = 5 seconds
+  val checkoutTimerDuration: FiniteDuration = 5 seconds
+  val paymentTimerDuration: FiniteDuration = 5 seconds
 
   def receive: Receive = {
     case StartCheckout =>
