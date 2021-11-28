@@ -21,23 +21,26 @@ class PersistentCartActor {
   private def scheduleTimer(context: ActorContext[Command]): Cancellable =
     context.scheduleOnce(cartTimerDuration, context.self, ExpireCart)
 
-  def apply(persistenceId: PersistenceId): Behavior[Command] = Behaviors.setup { context =>
-    EventSourcedBehavior[Command, Event, State](
-      persistenceId,
-      Empty,
-      commandHandler(context),
-      eventHandler(context)
-    ).receiveSignal {
-      case (state, PostStop) =>
-        state.timerOpt.foreach(_.cancel)
-    }
+  def apply(persistenceId: PersistenceId): Behavior[Command] = Behaviors.setup {
+    context =>
+      EventSourcedBehavior[Command, Event, State](
+        persistenceId,
+        Empty,
+        commandHandler(context),
+        eventHandler(context)
+      ).receiveSignal {
+        case (state, PostStop) =>
+          state.timerOpt.foreach(_.cancel)
+      }
   }
 
-  def commandHandler(context: ActorContext[Command]): (State, Command) => Effect[Event, State] = (state, command) => {
+  def commandHandler(context: ActorContext[Command])
+    : (State, Command) => Effect[Event, State] = (state, command) => {
     state match {
       case Empty =>
         command match {
-          case AddItem(item) => Effect.persist(ItemAdded(item, Some(Instant.now())))
+          case AddItem(item) =>
+            Effect.persist(ItemAdded(item, Some(Instant.now())))
           case GetItems(sender) =>
             sender ! Cart.empty
             Effect.none
@@ -51,7 +54,8 @@ class PersistentCartActor {
           case RemoveItem(_) if cart.size == 1          => Effect.persist(CartEmptied)
           case RemoveItem(item)                         => Effect.persist(ItemRemoved(item))
           case StartCheckout(orderManagerRef) =>
-            val checkoutActor = context.spawn(new TypedCheckout(context.self).start, "CheckoutActor")
+            val checkoutActor = context
+              .spawn(new TypedCheckout(context.self).start, "CheckoutActor")
             Effect.persist(CheckoutStarted(checkoutActor)).thenRun { _ =>
               checkoutActor ! TypedCheckout.StartCheckout
               orderManagerRef ! CheckoutStarted(checkoutActor)
@@ -75,23 +79,26 @@ class PersistentCartActor {
     }
   }
 
-  def eventHandler(context: ActorContext[Command]): (State, Event) => State = (state, event) => {
-    val cart                                        = state.cart
-    lazy val timer                                  = state.timerOpt.get
-    lazy val stopTimer: Unit                        = state.timerOpt.foreach(_.cancel)
+  def eventHandler(context: ActorContext[Command]): (State, Event) => State =
+    (state, event) => {
+      val cart = state.cart
+      lazy val timer = state.timerOpt.get
+      lazy val stopTimer: Unit = state.timerOpt.foreach(_.cancel)
 
-    event match {
-      case CheckoutStarted(_) => stopTimer
-        InCheckout(cart)
-      case ItemAdded(item, Some(_)) => NonEmpty(cart.addItem(item), scheduleTimer(context))
-      case ItemAdded(item, _)               => NonEmpty(cart.addItem(item), timer)
-      case ItemRemoved(item)                => NonEmpty(cart.removeItem(item), timer)
-      case CartEmptied | CartExpired =>
-        stopTimer
-        Empty
-      case CheckoutClosed               => Empty
-      case CheckoutCancelled => NonEmpty(cart, scheduleTimer(context))
+      event match {
+        case CheckoutStarted(_) =>
+          stopTimer
+          InCheckout(cart)
+        case ItemAdded(item, Some(_)) =>
+          NonEmpty(cart.addItem(item), scheduleTimer(context))
+        case ItemAdded(item, _) => NonEmpty(cart.addItem(item), timer)
+        case ItemRemoved(item)  => NonEmpty(cart.removeItem(item), timer)
+        case CartEmptied | CartExpired =>
+          stopTimer
+          Empty
+        case CheckoutClosed    => Empty
+        case CheckoutCancelled => NonEmpty(cart, scheduleTimer(context))
+      }
     }
-  }
 
 }

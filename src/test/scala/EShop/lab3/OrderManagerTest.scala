@@ -12,10 +12,10 @@ import scala.concurrent.duration._
 
 class OrderManagerTest
   extends ScalaTestWithActorTestKit
-    with AnyFlatSpecLike
-    with BeforeAndAfterAll
-    with Matchers
-    with ScalaFutures {
+  with AnyFlatSpecLike
+  with BeforeAndAfterAll
+  with Matchers
+  with ScalaFutures {
 
   import OrderManager._
 
@@ -24,9 +24,9 @@ class OrderManagerTest
   implicit val scheduler: Scheduler = testKit.scheduler
 
   def sendMessage(
-                   orderManager: ActorRef[OrderManager.Command],
-                   message: ActorRef[Any] => OrderManager.Command
-                 ): Unit = {
+    orderManager: ActorRef[OrderManager.Command],
+    message: ActorRef[Any] => OrderManager.Command
+  ): Unit = {
     import akka.actor.typed.scaladsl.AskPattern.Askable
     orderManager.ask[Any](message).mapTo[OrderManager.Ack].futureValue shouldBe Done
   }

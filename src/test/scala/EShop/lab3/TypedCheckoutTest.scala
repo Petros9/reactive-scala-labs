@@ -13,10 +13,10 @@ import org.scalatest.matchers.should.Matchers
 
 class TypedCheckoutTest
   extends ScalaTestWithActorTestKit
-    with AnyFlatSpecLike
-    with BeforeAndAfterAll
-    with Matchers
-    with ScalaFutures {
+  with AnyFlatSpecLike
+  with BeforeAndAfterAll
+  with Matchers
+  with ScalaFutures {
 
   import TypedCheckout._
   import TypedCheckoutTest._
@@ -25,38 +25,38 @@ class TypedCheckoutTest
     testKit.shutdownTestKit()
 
   it should "Send close confirmation to cart" in {
-    val cartActor = testKit.createTestProbe[TypedCartActor.Command]()
+    val cartActor            = testKit.createTestProbe[TypedCartActor.Command]()
     val orderManagerCheckout = testKit.createTestProbe[Event]
-    val orderManagerPayment = testKit.createTestProbe[Payment.Event]
-    val probe = testKit.createTestProbe[String]()
+    val orderManagerPayment  = testKit.createTestProbe[Payment.Event]
+    val probe                = testKit.createTestProbe[String]()
 
     val checkoutActor = testKit.spawn(new TypedCheckout(cartActor.ref) {
       override def selectingDelivery(timer: Cancellable): Behavior[TypedCheckout.Command] =
-        Behaviors.setup(_ => {
+        Behaviors.setup { _ =>
           val result = super.selectingDelivery(timer)
           probe.ref ! selectingDeliveryMsg
           result
-        })
+        }
 
       override def selectingPaymentMethod(timer: Cancellable): Behavior[TypedCheckout.Command] =
-        Behaviors.setup(_ => {
+        Behaviors.setup { _ =>
           probe.ref ! selectingPaymentMethodMsg
           super.selectingPaymentMethod(timer)
-        })
+        }
 
       override def processingPayment(timer: Cancellable): Behavior[TypedCheckout.Command] =
-        Behaviors.setup(_ => {
+        Behaviors.setup { _ =>
           probe.ref ! processingPaymentMsg
           super.processingPayment(timer)
-        })
+        }
 
-    }.start )
+    }.start)
 
     checkoutActor ! StartCheckout
     probe.expectMessage(selectingDeliveryMsg)
     checkoutActor ! SelectDeliveryMethod("Courier")
     probe.expectMessage(selectingPaymentMethodMsg)
-    checkoutActor ! SelectPayment("Transfer",  orderManagerCheckout.ref, orderManagerPayment.ref)
+    checkoutActor ! SelectPayment("Transfer", orderManagerCheckout.ref, orderManagerPayment.ref)
     probe.expectMessage(processingPaymentMsg)
 
     orderManagerCheckout.expectMessageType[TypedCheckout.PaymentStarted]

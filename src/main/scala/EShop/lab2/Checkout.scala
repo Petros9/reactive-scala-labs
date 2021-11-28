@@ -1,6 +1,14 @@
 package EShop.lab2
 
-import EShop.lab2.Checkout.{CancelCheckout, ConfirmPaymentReceived, ExpireCheckout, ExpirePayment, SelectDeliveryMethod, SelectPayment, StartCheckout}
+import EShop.lab2.Checkout.{
+  CancelCheckout,
+  ConfirmPaymentReceived,
+  ExpireCheckout,
+  ExpirePayment,
+  SelectDeliveryMethod,
+  SelectPayment,
+  StartCheckout
+}
 import akka.actor.{Actor, ActorRef, Cancellable}
 import akka.event.Logging
 
@@ -11,21 +19,21 @@ import scala.language.postfixOps
 object Checkout {
 
   sealed trait Data
-  case object Uninitialized                               extends Data
+  case object Uninitialized extends Data
   case class SelectingDeliveryStarted(timer: Cancellable) extends Data
   case class ProcessingPaymentStarted(timer: Cancellable) extends Data
 
   sealed trait Command
-  case object StartCheckout                       extends Command
+  case object StartCheckout extends Command
   case class SelectDeliveryMethod(method: String) extends Command
-  case object CancelCheckout                      extends Command
-  case object ExpireCheckout                      extends Command
-  case class SelectPayment(payment: String)       extends Command
-  case object ExpirePayment                       extends Command
-  case object ConfirmPaymentReceived              extends Command
+  case object CancelCheckout extends Command
+  case object ExpireCheckout extends Command
+  case class SelectPayment(payment: String) extends Command
+  case object ExpirePayment extends Command
+  case object ConfirmPaymentReceived extends Command
 
   sealed trait Event
-  case object CheckOutClosed                   extends Event
+  case object CheckOutClosed extends Event
   case class PaymentStarted(payment: ActorRef) extends Event
 
 }
@@ -33,7 +41,7 @@ object Checkout {
 class Checkout extends Actor {
 
   private val scheduler = context.system.scheduler
-  private val log       = Logging(context.system, this)
+  private val log = Logging(context.system, this)
 
   var delivery = ""
   var payment = ""
@@ -106,16 +114,14 @@ class Checkout extends Actor {
       context.become(cancelled)
   }
 
-
-  def cancelled: Receive = {
-    _ => context.stop(self)
+  def cancelled: Receive = { _ =>
+    context.stop(self)
   }
 
-  def closed: Receive = {
-    _ =>
-      log.info("Closing checkout")
-      println("closing")
-      context.stop(self)
+  def closed: Receive = { _ =>
+    log.info("Closing checkout")
+    println("closing")
+    context.stop(self)
   }
 
 }
