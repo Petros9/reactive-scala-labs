@@ -49,8 +49,7 @@ object RequestCounter {
   def countRequests(state: Int, log: Logger): Behavior[RequestCounterCommand] =
     Behaviors.receiveMessage {
       case ProductsEndpointHit =>
-        log.info("Received EndpointHit.")
-        println(state + 1)
+        log.info(s"Received EndpointHit, now we have ${state + 1} requests")
         countRequests(state + 1, log)
       case RequestProductsEndpointHitsCount(replyTo) =>
         log.info("Received request for endpoint hits count.")
