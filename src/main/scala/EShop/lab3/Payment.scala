@@ -17,9 +17,9 @@ object Payment {
 }
 
 class Payment(
-    method: String,
-    orderManager: ActorRef[Event],
-    checkout: ActorRef[TypedCheckout.Command]
+  method: String,
+  orderManager: ActorRef[Event],
+  checkout: ActorRef[TypedCheckout.Command]
 ) {
 
   def start: Behavior[Payment.Command] = Behaviors.receive { (_, message) =>

@@ -21,8 +21,8 @@ object PaymentService {
   // use akka.http.scaladsl.Http to make http based payment request
   // use getUri method to obtain url
   def apply(
-      method: String,
-      payment: ActorRef[Response]
+    method: String,
+    payment: ActorRef[Response]
   ): Behavior[HttpResponse] = Behaviors.setup { context =>
     implicit val system: ActorSystem[Nothing] = context.system
     implicit val executionContext: ExecutionContextExecutor =
@@ -39,11 +39,9 @@ object PaymentService {
       case HttpResponse(code, _, _, _) if code.isSuccess() =>
         payment ! PaymentSucceeded
         Behaviors.stopped
-      case HttpResponse(code, _, _, _)
-          if code.intValue() >= 500 || code.intValue() == 408 =>
+      case HttpResponse(code, _, _, _) if code.intValue() >= 500 || code.intValue() == 408 =>
         throw PaymentServerError()
-      case HttpResponse(code, _, _, _)
-          if code.intValue() >= 400 && code.intValue() < 500 =>
+      case HttpResponse(code, _, _, _) if code.intValue() >= 400 && code.intValue() < 500 =>
         throw PaymentClientError()
 
     }

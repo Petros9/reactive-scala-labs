@@ -21,21 +21,19 @@ class PersistentCartActor {
   private def scheduleTimer(context: ActorContext[Command]): Cancellable =
     context.scheduleOnce(cartTimerDuration, context.self, ExpireCart)
 
-  def apply(persistenceId: PersistenceId): Behavior[Command] = Behaviors.setup {
-    context =>
-      EventSourcedBehavior[Command, Event, State](
-        persistenceId,
-        Empty,
-        commandHandler(context),
-        eventHandler(context)
-      ).receiveSignal {
-        case (state, PostStop) =>
-          state.timerOpt.foreach(_.cancel)
-      }
+  def apply(persistenceId: PersistenceId): Behavior[Command] = Behaviors.setup { context =>
+    EventSourcedBehavior[Command, Event, State](
+      persistenceId,
+      Empty,
+      commandHandler(context),
+      eventHandler(context)
+    ).receiveSignal {
+      case (state, PostStop) =>
+        state.timerOpt.foreach(_.cancel)
+    }
   }
 
-  def commandHandler(context: ActorContext[Command])
-    : (State, Command) => Effect[Event, State] = (state, command) => {
+  def commandHandler(context: ActorContext[Command]): (State, Command) => Effect[Event, State] = (state, command) => {
     state match {
       case Empty =>
         command match {
@@ -81,8 +79,8 @@ class PersistentCartActor {
 
   def eventHandler(context: ActorContext[Command]): (State, Event) => State =
     (state, event) => {
-      val cart = state.cart
-      lazy val timer = state.timerOpt.get
+      val cart                 = state.cart
+      lazy val timer           = state.timerOpt.get
       lazy val stopTimer: Unit = state.timerOpt.foreach(_.cancel)
 
       event match {

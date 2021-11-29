@@ -26,10 +26,9 @@ object ProductCatalogNodeApp extends App {
 
   Await.ready(system.whenTerminated, Duration.Inf)
 
-  def spawnProductCatalogWorker(system: ActorSystem[Nothing],
-                                number: Int): ActorRef[ProductCatalog.Query] = {
+  def spawnProductCatalogWorker(system: ActorSystem[Nothing], number: Int): ActorRef[ProductCatalog.Query] = {
     val searchService = new SearchService()
-    val workerName = s"workersRouter$number"
+    val workerName    = s"workersRouter$number"
     val worker: ActorRef[ProductCatalog.Query] =
       system.systemActorOf(ProductCatalog(searchService), workerName)
 

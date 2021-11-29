@@ -19,7 +19,7 @@ object HelloWorldAkkaHttpServer {
 }
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  implicit val nameFormat = jsonFormat1(HelloWorldAkkaHttpServer.Name)
+  implicit val nameFormat      = jsonFormat1(HelloWorldAkkaHttpServer.Name)
   implicit val greetingsFormat = jsonFormat1(HelloWorldAkkaHttpServer.Greetings)
 
   //custom formatter just for example

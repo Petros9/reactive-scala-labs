@@ -1,23 +1,13 @@
 package EShop.lab2
 
-import EShop.lab2.CartActor.{
-  AddItem,
-  ConfirmCheckoutCancelled,
-  ConfirmCheckoutClosed,
-  RemoveItem
-}
-import EShop.lab2.Checkout.{
-  CancelCheckout,
-  ConfirmPaymentReceived,
-  SelectDeliveryMethod,
-  SelectPayment
-}
+import EShop.lab2.CartActor.{AddItem, ConfirmCheckoutCancelled, ConfirmCheckoutClosed, RemoveItem}
+import EShop.lab2.Checkout.{CancelCheckout, ConfirmPaymentReceived, SelectDeliveryMethod, SelectPayment}
 import akka.actor.{ActorSystem, Props}
 
 import scala.io.StdIn.readLine
 
 object EShopApp extends App {
-  val system = ActorSystem("EShop")
+  val system    = ActorSystem("EShop")
   val cartActor = system.actorOf(Props[CartActor], "carActor")
 
   while (true) {

@@ -14,9 +14,8 @@ sealed trait RequestCounterTopicMessage
 case object ProductsEndpointHitMessage extends RequestCounterTopicMessage
 
 sealed trait RequestCounterCommand
-case class RequestProductsEndpointHitsCount(replyTo: ActorRef[Int])
-    extends RequestCounterCommand
-case object ProductsEndpointHit extends RequestCounterCommand
+case class RequestProductsEndpointHitsCount(replyTo: ActorRef[Int]) extends RequestCounterCommand
+case object ProductsEndpointHit                                     extends RequestCounterCommand
 
 object RequestCounterApp extends App {
   private val config = ConfigFactory.load()
@@ -54,6 +53,7 @@ object RequestCounter {
     Behaviors.receiveMessage {
       case ProductsEndpointHit =>
         log.info("Received EndpointHit.")
+        println(state + 1)
         countRequests(state + 1, log)
       case RequestProductsEndpointHitsCount(replyTo) =>
         log.info("Received request for endpoint hits count.")

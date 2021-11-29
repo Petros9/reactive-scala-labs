@@ -41,8 +41,9 @@ class CheckoutTest
     val checkoutActor = system.actorOf(Props(new Checkout {
       override val checkoutTimerDuration: FiniteDuration = 1.seconds
 
-      override def cancelled: Receive = { case any =>
-        sender ! cancelledMsg
+      override def cancelled: Receive = {
+        case any =>
+          sender ! cancelledMsg
       }
     }))
 
@@ -76,8 +77,9 @@ class CheckoutTest
     val checkoutActor = system.actorOf(Props(new Checkout {
       override val checkoutTimerDuration: FiniteDuration = 1.seconds
 
-      override def cancelled: Receive = { case any =>
-        sender ! cancelledMsg
+      override def cancelled: Receive = {
+        case any =>
+          sender ! cancelledMsg
       }
     }))
 
@@ -116,8 +118,9 @@ class CheckoutTest
     val checkoutActor = system.actorOf(Props(new Checkout {
       override val paymentTimerDuration: FiniteDuration = 1.seconds
 
-      override def cancelled: Receive = { case any =>
-        sender ! cancelledMsg
+      override def cancelled: Receive = {
+        case any =>
+          sender ! cancelledMsg
       }
     }))
 

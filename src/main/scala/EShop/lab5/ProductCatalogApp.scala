@@ -38,13 +38,11 @@ class SearchService() {
     .toList
     .groupBy(_.brand.toLowerCase)
 
-  def search(brand: String,
-             keyWords: List[String]): List[ProductCatalog.Item] = {
+  def search(brand: String, keyWords: List[String]): List[ProductCatalog.Item] = {
     val lowerCasedKeyWords = keyWords.map(_.toLowerCase)
     brandItemsMap
       .getOrElse(brand.toLowerCase, Nil)
-      .map(item =>
-        (lowerCasedKeyWords.count(item.name.toLowerCase.contains), item))
+      .map(item => (lowerCasedKeyWords.count(item.name.toLowerCase.contains), item))
       .sortBy(-_._1) // sort in desc order
       .take(10)
       .map(_._2)
@@ -54,34 +52,26 @@ class SearchService() {
 object ProductCatalog {
   val ProductCatalogServiceKey = ServiceKey[Query]("ProductCatalog")
 
-  case class Item(id: URI,
-                  name: String,
-                  brand: String,
-                  price: BigDecimal,
-                  count: Int)
+  case class Item(id: URI, name: String, brand: String, price: BigDecimal, count: Int)
 
   sealed trait Query
-  case class GetItems(brand: String,
-                      productKeyWords: List[String],
-                      sender: ActorRef[Ack])
-      extends Query
+  case class GetItems(brand: String, productKeyWords: List[String], sender: ActorRef[Ack]) extends Query
 
   sealed trait Ack
   case class Items(items: List[Item]) extends Ack
 
-  def apply(searchService: SearchService): Behavior[Query] = Behaviors.setup {
-    context =>
-      context.system.receptionist ! Receptionist
-        .register(ProductCatalogServiceKey, context.self)
-      val topic = context.spawn(RequestCounterTopic(), "RequestCounterTopic")
+  def apply(searchService: SearchService): Behavior[Query] = Behaviors.setup { context =>
+    context.system.receptionist ! Receptionist
+      .register(ProductCatalogServiceKey, context.self)
+    val topic = context.spawn(RequestCounterTopic(), "RequestCounterTopic")
 
-      Behaviors.receiveMessage {
-        case GetItems(brand, productKeyWords, sender) =>
-          sender ! Items(searchService.search(brand, productKeyWords))
-          context.log.info("Publishing to topic.")
-          topic ! Topic.Publish(ProductsEndpointHitMessage)
-          Behaviors.same
-      }
+    Behaviors.receiveMessage {
+      case GetItems(brand, productKeyWords, sender) =>
+        sender ! Items(searchService.search(brand, productKeyWords))
+        context.log.info("Publishing to topic.")
+        topic ! Topic.Publish(ProductsEndpointHitMessage)
+        Behaviors.same
+    }
   }
 }
 

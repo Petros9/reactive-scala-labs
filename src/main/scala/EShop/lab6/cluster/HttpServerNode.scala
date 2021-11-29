@@ -1,23 +1,12 @@
 package EShop.lab6.cluster
 
 import EShop.lab5.{ProductCatalog, ProductCatalogJsonSupport}
-import EShop.lab6.sub.{
-  RequestCounter,
-  RequestCounterCommand,
-  RequestProductsEndpointHitsCount
-}
+import EShop.lab6.sub.{RequestCounter, RequestCounterCommand, RequestProductsEndpointHitsCount}
 import akka.actor.typed.scaladsl.AskPattern.Askable
 import akka.actor.typed.scaladsl.{Behaviors, Routers}
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.Directives.{
-  _symbol2NR,
-  complete,
-  get,
-  parameter,
-  parameters,
-  path
-}
+import akka.http.scaladsl.server.Directives.{_symbol2NR, complete, get, parameter, parameters, path}
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
@@ -40,39 +29,33 @@ class HttpServerNode() extends ProductCatalogJsonSupport {
     config.getConfig("cluster-default")
   )
 
-  implicit val scheduler = system.scheduler
+  implicit val scheduler        = system.scheduler
   implicit val executionContext = system.executionContext
 
   implicit val timeout: Timeout = 5.seconds
 
   val workers: ActorRef[ProductCatalog.Query] =
-    system.systemActorOf(Routers.group(ProductCatalog.ProductCatalogServiceKey),
-                         "clusterWorkerRouter")
+    system.systemActorOf(Routers.group(ProductCatalog.ProductCatalogServiceKey), "clusterWorkerRouter")
 
   val requestCounter: ActorRef[RequestCounterCommand] =
-    system.systemActorOf(Routers.group(RequestCounter.RequestCounterServiceKey),
-                         "requestCounterRouter")
+    system.systemActorOf(Routers.group(RequestCounter.RequestCounterServiceKey), "requestCounterRouter")
 
   def routes: Route = Directives.concat(
     path("products") {
       get {
-        parameters(Symbol("keywords").as[String].repeated) {
-          keywords =>
-            parameter(Symbol("brand").as[String].withDefault("gerber")) {
-              brand =>
-                complete {
-                  system.log.info(
-                    s"/products, brand: ${brand}, keywords: ${keywords}")
+        parameters(Symbol("keywords").as[String].repeated) { keywords =>
+          parameter(Symbol("brand").as[String].withDefault("gerber")) { brand =>
+            complete {
+              system.log.info(s"/products, brand: ${brand}, keywords: ${keywords}")
 
-                  val items: Future[ProductCatalog.Items] =
-                    workers
-                      .ask(ref =>
-                        ProductCatalog.GetItems(brand, keywords.toList, ref))
-                      .mapTo[ProductCatalog.Items]
+              val items: Future[ProductCatalog.Items] =
+                workers
+                  .ask(ref => ProductCatalog.GetItems(brand, keywords.toList, ref))
+                  .mapTo[ProductCatalog.Items]
 
-                  items
-                }
+              items
             }
+          }
         }
       }
     },

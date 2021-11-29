@@ -21,8 +21,7 @@ class PersistentCheckout {
   def schedule(context: ActorContext[Command], command: Command): Cancellable =
     context.scheduleOnce(timerDuration, context.self, command)
 
-  def apply(cartActor: ActorRef[TypedCartActor.Command],
-            persistenceId: PersistenceId): Behavior[Command] =
+  def apply(cartActor: ActorRef[TypedCartActor.Command], persistenceId: PersistenceId): Behavior[Command] =
     Behaviors.setup { context =>
       EventSourcedBehavior(
         persistenceId,
@@ -36,8 +35,8 @@ class PersistentCheckout {
     }
 
   def commandHandler(
-      context: ActorContext[Command],
-      cartActor: ActorRef[TypedCartActor.Command]
+    context: ActorContext[Command],
+    cartActor: ActorRef[TypedCartActor.Command]
   ): (State, Command) => Effect[Event, State] = (state, command) => {
     state match {
       case WaitingForStart =>
@@ -57,14 +56,9 @@ class PersistentCheckout {
 
       case SelectingPaymentMethod(_) =>
         command match {
-          case SelectPayment(payment,
-                             orderManagerRef,
-                             orderManagerPaymentRef) =>
+          case SelectPayment(payment, orderManagerRef, orderManagerPaymentRef) =>
             val paymentActor =
-              context.spawn(new Payment(payment,
-                                        orderManagerPaymentRef,
-                                        context.self).start,
-                            "PaymentActor")
+              context.spawn(new Payment(payment, orderManagerPaymentRef, context.self).start, "PaymentActor")
             Effect
               .persist(PaymentStarted(paymentActor))
           case ExpireCheckout => Effect.persist(CheckoutCancelled)
@@ -97,7 +91,7 @@ class PersistentCheckout {
   def eventHandler(context: ActorContext[Command]): (State, Event) => State =
     (state, event) => {
       lazy val stopTimer: Unit = state.timerOpt.foreach(_.cancel)
-      lazy val timer = state.timerOpt.get
+      lazy val timer           = state.timerOpt.get
 
       event match {
         case CheckoutStarted =>

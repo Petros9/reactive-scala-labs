@@ -9,22 +9,16 @@ import akka.actor.typed.{ActorRef, Behavior}
 object OrderManager {
 
   sealed trait Command
-  case class AddItem(id: String, sender: ActorRef[Ack]) extends Command
-  case class RemoveItem(id: String, sender: ActorRef[Ack]) extends Command
-  case class SelectDeliveryAndPaymentMethod(delivery: String,
-                                            payment: String,
-                                            sender: ActorRef[Ack])
-      extends Command
-  case class Buy(sender: ActorRef[Ack]) extends Command
-  case class Pay(sender: ActorRef[Ack]) extends Command
-  case class ConfirmCheckoutStarted(
-      checkoutRef: ActorRef[TypedCheckout.Command])
-      extends Command
-  case class ConfirmPaymentStarted(paymentRef: ActorRef[Payment.Command])
-      extends Command
-  case object ConfirmPaymentReceived extends Command
-  case object PaymentRejected extends Command
-  case object PaymentRestarted extends Command
+  case class AddItem(id: String, sender: ActorRef[Ack])                                               extends Command
+  case class RemoveItem(id: String, sender: ActorRef[Ack])                                            extends Command
+  case class SelectDeliveryAndPaymentMethod(delivery: String, payment: String, sender: ActorRef[Ack]) extends Command
+  case class Buy(sender: ActorRef[Ack])                                                               extends Command
+  case class Pay(sender: ActorRef[Ack])                                                               extends Command
+  case class ConfirmCheckoutStarted(checkoutRef: ActorRef[TypedCheckout.Command])                     extends Command
+  case class ConfirmPaymentStarted(paymentRef: ActorRef[Payment.Command])                             extends Command
+  case object ConfirmPaymentReceived                                                                  extends Command
+  case object PaymentRejected                                                                         extends Command
+  case object PaymentRestarted                                                                        extends Command
 
   sealed trait Ack
   case object Done extends Ack //trivial ACK
@@ -60,33 +54,32 @@ class OrderManager(context: ActorContext[OrderManager.Command]) {
 
   def start: Behavior[OrderManager.Command] = uninitialized
 
-  def uninitialized: Behavior[OrderManager.Command] = Behaviors.setup {
-    context =>
-      context.log.info("Initializing OrderManager ")
-      open(context.spawn(new TypedCartActor().start, "CartActor"))
+  def uninitialized: Behavior[OrderManager.Command] = Behaviors.setup { context =>
+    context.log.info("Initializing OrderManager ")
+    open(context.spawn(new TypedCartActor().start, "CartActor"))
   }
 
-  def open(cartActor: ActorRef[TypedCartActor.Command])
-    : Behavior[OrderManager.Command] = Behaviors.receive { (context, message) =>
-    message match {
-      case AddItem(id, sender) =>
-        cartActor ! TypedCartActor.AddItem(id)
-        sender ! Done
-        Behaviors.same
-      case RemoveItem(id, sender) =>
-        cartActor ! TypedCartActor.RemoveItem(id)
-        sender ! Done
-        Behaviors.same
-      case Buy(sender) => inCheckout(cartActor, sender)
-      case message =>
-        context.log.info(s"Received unknown message: $message")
-        Behaviors.same
-    }
+  def open(cartActor: ActorRef[TypedCartActor.Command]): Behavior[OrderManager.Command] = Behaviors.receive {
+    (context, message) =>
+      message match {
+        case AddItem(id, sender) =>
+          cartActor ! TypedCartActor.AddItem(id)
+          sender ! Done
+          Behaviors.same
+        case RemoveItem(id, sender) =>
+          cartActor ! TypedCartActor.RemoveItem(id)
+          sender ! Done
+          Behaviors.same
+        case Buy(sender) => inCheckout(cartActor, sender)
+        case message =>
+          context.log.info(s"Received unknown message: $message")
+          Behaviors.same
+      }
   }
 
   def inCheckout(
-      cartActorRef: ActorRef[TypedCartActor.Command],
-      senderRef: ActorRef[Ack]
+    cartActorRef: ActorRef[TypedCartActor.Command],
+    senderRef: ActorRef[Ack]
   ): Behavior[OrderManager.Command] =
     Behaviors.setup { context =>
       cartActorRef ! TypedCartActor.StartCheckout(cartEventMapper)
@@ -100,15 +93,12 @@ class OrderManager(context: ActorContext[OrderManager.Command]) {
       }
     }
 
-  def inCheckout(checkoutActorRef: ActorRef[TypedCheckout.Command])
-    : Behavior[OrderManager.Command] =
+  def inCheckout(checkoutActorRef: ActorRef[TypedCheckout.Command]): Behavior[OrderManager.Command] =
     Behaviors.receive { (context, message) =>
       message match {
         case SelectDeliveryAndPaymentMethod(delivery, payment, sender) =>
           checkoutActorRef ! TypedCheckout.SelectDeliveryMethod(delivery)
-          checkoutActorRef ! TypedCheckout.SelectPayment(payment,
-                                                         checkoutEventMapper,
-                                                         paymentEventMapper)
+          checkoutActorRef ! TypedCheckout.SelectPayment(payment, checkoutEventMapper, paymentEventMapper)
           inPayment(sender)
         case message =>
           context.log.info(s"Received unknown message: $message")
@@ -129,8 +119,8 @@ class OrderManager(context: ActorContext[OrderManager.Command]) {
     }
 
   def inPayment(
-      paymentActorRef: ActorRef[Payment.Command],
-      senderRef: ActorRef[Ack]
+    paymentActorRef: ActorRef[Payment.Command],
+    senderRef: ActorRef[Ack]
   ): Behavior[OrderManager.Command] = Behaviors.receive { (context, message) =>
     message match {
       case Pay(sender) =>
@@ -145,12 +135,11 @@ class OrderManager(context: ActorContext[OrderManager.Command]) {
     }
   }
 
-  def finished: Behavior[OrderManager.Command] = Behaviors.receive {
-    (context, message) =>
-      message match {
-        case message =>
-          context.log.info(s"Received unknown message: $message")
-          Behaviors.same
-      }
+  def finished: Behavior[OrderManager.Command] = Behaviors.receive { (context, message) =>
+    message match {
+      case message =>
+        context.log.info(s"Received unknown message: $message")
+        Behaviors.same
+    }
   }
 }

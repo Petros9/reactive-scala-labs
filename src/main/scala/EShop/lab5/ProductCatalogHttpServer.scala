@@ -11,21 +11,13 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
-import spray.json.{
-  DefaultJsonProtocol,
-  JsString,
-  JsValue,
-  JsonFormat,
-  RootJsonFormat
-}
+import spray.json.{DefaultJsonProtocol, JsString, JsValue, JsonFormat, RootJsonFormat}
 
 import java.net.URI
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, Future}
 
-trait ProductCatalogJsonSupport
-    extends SprayJsonSupport
-    with DefaultJsonProtocol {
+trait ProductCatalogJsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val uriFormat = new JsonFormat[java.net.URI] {
     override def write(obj: java.net.URI): spray.json.JsValue =
       JsString(obj.toString)
@@ -36,15 +28,12 @@ trait ProductCatalogJsonSupport
       }
   }
 
-  implicit val itemFormat: RootJsonFormat[ProductCatalog.Item] = jsonFormat5(
-    ProductCatalog.Item)
-  implicit val itemsFormat: RootJsonFormat[ProductCatalog.Items] = jsonFormat1(
-    ProductCatalog.Items)
+  implicit val itemFormat: RootJsonFormat[ProductCatalog.Item]   = jsonFormat5(ProductCatalog.Item)
+  implicit val itemsFormat: RootJsonFormat[ProductCatalog.Items] = jsonFormat1(ProductCatalog.Items)
 }
 
-case class ProductCatalogHttpServer(ref: ActorRef[ProductCatalog.Query])(
-    implicit val scheduler: Scheduler)
-    extends ProductCatalogJsonSupport {
+case class ProductCatalogHttpServer(ref: ActorRef[ProductCatalog.Query])(implicit val scheduler: Scheduler)
+  extends ProductCatalogJsonSupport {
   implicit val timeout: Timeout = 3.second
 
   def routes: Route = {
@@ -55,8 +44,7 @@ case class ProductCatalogHttpServer(ref: ActorRef[ProductCatalog.Query])(
             complete {
               val items =
                 ref
-                  .ask(ref =>
-                    ProductCatalog.GetItems(brand, keywords.toList, ref))
+                  .ask(ref => ProductCatalog.GetItems(brand, keywords.toList, ref))
                   .mapTo[ProductCatalog.Items]
               Future.successful(items)
             }
@@ -75,18 +63,15 @@ object ProductCatalogHttpServer {
     Behaviors.setup { context =>
       implicit val system: ActorSystem[Nothing] = context.system
 
-      system.receptionist ! Receptionist.subscribe(
-        ProductCatalog.ProductCatalogServiceKey,
-        context.self)
+      system.receptionist ! Receptionist.subscribe(ProductCatalog.ProductCatalogServiceKey, context.self)
       Behaviors.receiveMessage[Receptionist.Listing] { message =>
         val listing =
           message.serviceInstances(ProductCatalog.ProductCatalogServiceKey)
         if (listing.nonEmpty) {
-          val ref = listing.head
+          val ref  = listing.head
           val rest = ProductCatalogHttpServer(ref)
           val binding = Http()
-            .newServerAt(ProductCatalogHttpServerConfig.host,
-                         ProductCatalogHttpServerConfig.port)
+            .newServerAt(ProductCatalogHttpServerConfig.host, ProductCatalogHttpServerConfig.port)
             .bind(rest.routes)
           Await.ready(binding, Duration.Inf)
           Behaviors.empty
@@ -98,8 +83,7 @@ object ProductCatalogHttpServer {
   }
 
   def start(): Future[Done] = {
-    val system = ActorSystem[Receptionist.Listing](ProductCatalogHttpServer(),
-                                                   "ProductCatalog")
+    val system = ActorSystem[Receptionist.Listing](ProductCatalogHttpServer(), "ProductCatalog")
     val config = ConfigFactory.load()
 
     val productCatalogSystem = ActorSystem[Nothing](
