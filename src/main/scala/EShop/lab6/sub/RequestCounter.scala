@@ -29,9 +29,6 @@ object RequestCounterApp extends App {
   Await.ready(system.whenTerminated, Duration.Inf)
 }
 
-// here we need to spawn request counter actor
-// register it with a key
-// and subscribe for statistics.
 object RequestCounter {
   val RequestCounterServiceKey =
     ServiceKey[RequestCounterCommand]("RequestCounter")
