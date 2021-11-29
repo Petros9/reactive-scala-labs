@@ -42,7 +42,8 @@ class CheckoutTest
       override val checkoutTimerDuration: FiniteDuration = 1.seconds
 
       override def cancelled: Receive = {
-        case any => sender ! cancelledMsg
+        case any =>
+          sender ! cancelledMsg
       }
     }))
 
@@ -77,7 +78,8 @@ class CheckoutTest
       override val checkoutTimerDuration: FiniteDuration = 1.seconds
 
       override def cancelled: Receive = {
-        case any => sender ! cancelledMsg
+        case any =>
+          sender ! cancelledMsg
       }
     }))
 
@@ -117,7 +119,8 @@ class CheckoutTest
       override val paymentTimerDuration: FiniteDuration = 1.seconds
 
       override def cancelled: Receive = {
-        case any => sender ! cancelledMsg
+        case any =>
+          sender ! cancelledMsg
       }
     }))
 

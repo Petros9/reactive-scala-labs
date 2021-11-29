@@ -11,7 +11,8 @@ import scala.util.{Failure, Success}
 
 class PaymentServiceServer extends PaymentRoutes {
 
-  implicit val system: ActorSystem[Nothing]       = ActorSystem(Behaviors.empty, "PaymentServiceSystem")
+  implicit val system: ActorSystem[Nothing] =
+    ActorSystem(Behaviors.empty, "PaymentServiceSystem")
   implicit val executionContext: ExecutionContext = system.executionContext
   lazy val routes: Route                          = userRoutes
 

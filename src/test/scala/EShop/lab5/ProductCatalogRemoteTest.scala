@@ -40,8 +40,6 @@ class ProductCatalogRemoteTest extends AsyncFlatSpecLike with Matchers {
       items <- productCatalog.ask(ref => GetItems("gerber", List("cream"), ref)).mapTo[ProductCatalog.Items]
       _ = actorSystem.terminate()
       _ = anotherActorSystem.terminate()
-    } yield {
-      assert(items.items.size == 10)
-    }
+    } yield assert(items.items.size == 10)
   }
 }

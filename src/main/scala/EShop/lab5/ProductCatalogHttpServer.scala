@@ -2,7 +2,7 @@ package EShop.lab5
 
 import akka.Done
 import akka.actor.typed.receptionist.Receptionist
-import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
+import akka.actor.typed.scaladsl.AskPattern.{schedulerFromActorSystem, Askable}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior, Scheduler}
 import akka.http.scaladsl.Http
@@ -19,7 +19,8 @@ import scala.concurrent.{Await, Future}
 
 trait ProductCatalogJsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val uriFormat = new JsonFormat[java.net.URI] {
-    override def write(obj: java.net.URI): spray.json.JsValue = JsString(obj.toString)
+    override def write(obj: java.net.URI): spray.json.JsValue =
+      JsString(obj.toString)
     override def read(json: JsValue): URI =
       json match {
         case JsString(url) => new URI(url)
@@ -27,7 +28,7 @@ trait ProductCatalogJsonSupport extends SprayJsonSupport with DefaultJsonProtoco
       }
   }
 
-  implicit val itemFormat: RootJsonFormat[ProductCatalog.Item] = jsonFormat5(ProductCatalog.Item)
+  implicit val itemFormat: RootJsonFormat[ProductCatalog.Item]   = jsonFormat5(ProductCatalog.Item)
   implicit val itemsFormat: RootJsonFormat[ProductCatalog.Items] = jsonFormat1(ProductCatalog.Items)
 }
 
@@ -41,7 +42,10 @@ case class ProductCatalogHttpServer(ref: ActorRef[ProductCatalog.Query])(implici
         parameters(Symbol("keywords").as[String].repeated) { keywords =>
           parameter(Symbol("brand").as[String].withDefault("gerber")) { brand =>
             complete {
-              val items = ref.ask(ref => ProductCatalog.GetItems(brand, keywords.toList, ref)).mapTo[ProductCatalog.Items]
+              val items =
+                ref
+                  .ask(ref => ProductCatalog.GetItems(brand, keywords.toList, ref))
+                  .mapTo[ProductCatalog.Items]
               Future.successful(items)
             }
           }
@@ -60,18 +64,21 @@ object ProductCatalogHttpServer {
       implicit val system: ActorSystem[Nothing] = context.system
 
       system.receptionist ! Receptionist.subscribe(ProductCatalog.ProductCatalogServiceKey, context.self)
-      Behaviors.receiveMessage[Receptionist.Listing](message => {
-        val listing = message.serviceInstances(ProductCatalog.ProductCatalogServiceKey)
+      Behaviors.receiveMessage[Receptionist.Listing] { message =>
+        val listing =
+          message.serviceInstances(ProductCatalog.ProductCatalogServiceKey)
         if (listing.nonEmpty) {
-          val ref = listing.head
-          val rest     = ProductCatalogHttpServer(ref)
-          val binding  = Http().newServerAt(ProductCatalogHttpServerConfig.host, ProductCatalogHttpServerConfig.port).bind(rest.routes)
+          val ref  = listing.head
+          val rest = ProductCatalogHttpServer(ref)
+          val binding = Http()
+            .newServerAt(ProductCatalogHttpServerConfig.host, ProductCatalogHttpServerConfig.port)
+            .bind(rest.routes)
           Await.ready(binding, Duration.Inf)
           Behaviors.empty
         } else {
           Behaviors.same
         }
-      })
+      }
     }
   }
 

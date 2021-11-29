@@ -21,22 +21,26 @@ object Payment {
   sealed trait Response
   case object PaymentRejected extends Response
 
-  val restartStrategy = SupervisorStrategy.restart.withLimit(maxNrOfRetries = 3, withinTimeRange = 1.second)
+  val restartStrategy = SupervisorStrategy.restart
+    .withLimit(maxNrOfRetries = 3, withinTimeRange = 1.second)
 
   def apply(
-             method: String,
-             orderManager: ActorRef[OrderManager.Command],
-             checkout: ActorRef[TypedCheckout.Command]
-           ): Behavior[Message] =
+    method: String,
+    orderManager: ActorRef[OrderManager.Command],
+    checkout: ActorRef[TypedCheckout.Command]
+  ): Behavior[Message] =
     Behaviors
       .receive[Message](
         (context, msg) =>
           msg match {
             case DoPayment =>
               val adapter = context.messageAdapter[PaymentService.Response] {
-                case response @ PaymentSucceeded => WrappedPaymentServiceResponse(response)
+                case response @ PaymentSucceeded =>
+                  WrappedPaymentServiceResponse(response)
               }
-              val paymentService = Behaviors.supervise(PaymentService(method, adapter)).onFailure(restartStrategy)
+              val paymentService = Behaviors
+                .supervise(PaymentService(method, adapter))
+                .onFailure(restartStrategy)
               val paymentServiceRef = context.spawnAnonymous(paymentService)
               context.watchWith(paymentServiceRef, PaymentServiceTerminated)
 
@@ -51,14 +55,14 @@ object Payment {
               println("payment terminated")
               notifyAboutRejection(orderManager, checkout)
               Behaviors.same
-          }
+        }
       )
 
   // please use this one to notify when supervised actor was stoped
   private def notifyAboutRejection(
-                                    orderManager: ActorRef[OrderManager.Command],
-                                    checkout: ActorRef[TypedCheckout.Command]
-                                  ): Unit = {
+    orderManager: ActorRef[OrderManager.Command],
+    checkout: ActorRef[TypedCheckout.Command]
+  ): Unit = {
     orderManager ! OrderManager.PaymentRejected
     checkout ! TypedCheckout.PaymentRejected
   }

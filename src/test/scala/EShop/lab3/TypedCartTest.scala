@@ -9,13 +9,12 @@ import org.scalatest.flatspec.AnyFlatSpecLike
 import org.scalatest.matchers.should.Matchers
 import scala.concurrent.duration._
 
-
 class TypedCartTest
   extends ScalaTestWithActorTestKit
-    with AnyFlatSpecLike
-    with BeforeAndAfterAll
-    with Matchers
-    with ScalaFutures {
+  with AnyFlatSpecLike
+  with BeforeAndAfterAll
+  with Matchers
+  with ScalaFutures {
 
   override def afterAll: Unit =
     testKit.shutdownTestKit()
@@ -26,7 +25,7 @@ class TypedCartTest
   //use GetItems command which was added to make test easier
   it should "add item properly" in {
     val testKit = BehaviorTestKit(new TypedCartActor().start)
-    val inbox = TestInbox[Cart]()
+    val inbox   = TestInbox[Cart]()
 
     testKit.run(AddItem(item1))
     testKit.run(GetItems(inbox.ref))
@@ -35,7 +34,7 @@ class TypedCartTest
 
   it should "be empty after adding and removing the same item" in {
     val testKit = BehaviorTestKit(new TypedCartActor().start)
-    val inbox = TestInbox[Cart]()
+    val inbox   = TestInbox[Cart]()
 
     testKit.run(AddItem(item1))
     testKit.run(RemoveItem(item1))
@@ -45,7 +44,7 @@ class TypedCartTest
 
   it should "start checkout" in {
     val testKit = BehaviorTestKit(new TypedCartActor().start)
-    val inbox = TestInbox[TypedCartActor.Event]()
+    val inbox   = TestInbox[TypedCartActor.Event]()
 
     testKit.run(AddItem(item1))
     testKit.run(StartCheckout(inbox.ref))
@@ -60,7 +59,7 @@ class TypedCartTest
 
   it should "add item properly - async" in {
     val cartActor = testKit.spawn(new TypedCartActor().start)
-    val probe = testKit.createTestProbe[Any]()
+    val probe     = testKit.createTestProbe[Any]()
 
     cartActor ! AddItem(item1)
     cartActor ! GetItems(probe.ref)
@@ -69,7 +68,7 @@ class TypedCartTest
 
   it should "be empty after adding and removing the same item - async" in {
     val cartActor = testKit.spawn(new TypedCartActor().start)
-    val probe = testKit.createTestProbe[Any]()
+    val probe     = testKit.createTestProbe[Any]()
 
     cartActor ! AddItem(item1)
     cartActor ! RemoveItem(item1)
@@ -79,7 +78,7 @@ class TypedCartTest
 
   it should "start checkout - async" in {
     val cartActor = testKit.spawn(new TypedCartActor().start)
-    val probe = testKit.createTestProbe[Any]()
+    val probe     = testKit.createTestProbe[Any]()
 
     cartActor ! AddItem(item1)
     cartActor ! StartCheckout(probe.ref)
@@ -88,7 +87,7 @@ class TypedCartTest
 }
 
 object TypedCartTest {
-  val item1 = "Book1"
+  val item1       = "Book1"
   val cart1: Cart = Cart.empty.addItem(item1)
   val cart2: Cart = Cart.empty
 }

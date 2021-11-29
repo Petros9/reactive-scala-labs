@@ -14,9 +14,9 @@ import scala.util.Random
 
 class PersistentCartActorInterruptionTest
   extends ScalaTestWithActorTestKit(EventSourcedBehaviorTestKit.config)
-    with AnyFlatSpecLike
-    with BeforeAndAfterAll
-    with BeforeAndAfterEach {
+  with AnyFlatSpecLike
+  with BeforeAndAfterAll
+  with BeforeAndAfterEach {
 
   override def afterAll: Unit = testKit.shutdownTestKit()
 

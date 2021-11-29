@@ -1,6 +1,6 @@
+enablePlugins(GatlingPlugin)
 
-
-name := "EShop"
+name := "reactive-programming"
 
 version := "0.3"
 
@@ -31,7 +31,6 @@ libraryDependencies ++= Seq(
 
 libraryDependencies += "io.gatling.highcharts" % "gatling-charts-highcharts" % "3.5.1" % "test,it"
 libraryDependencies += "io.gatling"            % "gatling-test-framework"    % "3.5.1" % "test,it"
-
 // scalaFmt
 scalafmtOnCompile := true
 
